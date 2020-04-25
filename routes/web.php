@@ -9,6 +9,7 @@
 | contains the "web" middleware group. Now create something great!
 |
 */
+
 use Bulkly\Billable;
 use Bulkly\User;
 use Illuminate\Http\Request;
@@ -29,43 +30,26 @@ Route::get('/user/invoice/{invoice}', function (Request $request, $invoiceId) {
     ]);
 });
 
-Route::get('/group-test/{id}', function(Request $request, $id){
+Route::get('/group-test/{id}', function (Request $request, $id) {
 
     $group = SocialPostGroups::find($id);
 
-    if($group->type){
+    if ($group->type) {
 
-        $posts = SocialPosts::where('group_id', $group->id)->whereIn('status', array('1','0'))->get();
-
+        $posts = SocialPosts::where('group_id', $group->id)->whereIn('status', array('1', '0'))->get();
 
         $rsspostsarray = array();
         foreach ($posts as $key => $post) {
 
             $item = RssAutoPost::where('post_id', $post->id)->where('status', 0)->first();
 
-            if($item){
-                array_push($rsspostsarray , $item);
+            if ($item) {
+                array_push($rsspostsarray, $item);
             }
-
-
         }
         dump($rsspostsarray[0]);
-
-
-
-
-
-
     }
-
-
-
-
-
-
 });
-
-
 
 
 
@@ -105,8 +89,6 @@ Route::post('/settings/timezone/', 'PagesController@history')->name('saveTimezon
 
 Route::post('/rebrandly-domain', 'PagesController@rebrandlyDomain')->name('rebrandly.domain');
 
-
-
 Route::post('/update-user/', 'AjaxController@updateUser');
 Route::post('/upgrade-plan/', 'AjaxController@upgradePlan');
 Route::post('/csv-to-content-upload/', 'AjaxController@CsvToContentUpload');
@@ -126,7 +108,6 @@ Route::post('/shuffle-group-update/', 'AjaxController@ShuffleGroupUpdate');
 
 Route::post('/add_image-group-update/', 'AjaxController@AddImageGroupUpdate');
 Route::post('/home-posting-frequency/', 'AjaxController@homePostingFrequency')->name('homePostingFrequency');
-
 
 Route::post('/hashtags-update/', 'AjaxController@HashtagsUpdate');
 Route::post('/group-delete/', 'AjaxController@GroupDelete');
@@ -149,13 +130,12 @@ Route::post('/export-content', 'AjaxController@ExportContent');
 Route::post('/csv-to-reupload', 'AjaxController@CsvToReupload');
 
 
-
-Route::get('/import-from-buffer', function(){
+Route::get('/import-from-buffer', function () {
     $user = \Bulkly\User::find(\Auth::id());
     foreach ($user->socialaccounts as $key => $socialaccount) {
         $client = new Client();
         try {
-            $result = $client->request('GET', 'https://api.bufferapp.com/1/profiles/'.$socialaccount->account_id.'/updates/sent.json?count=100&access_token='.$socialaccount->buffer_token);
+            $result = $client->request('GET', 'https://api.bufferapp.com/1/profiles/' . $socialaccount->account_id . '/updates/sent.json?count=100&access_token=' . $socialaccount->buffer_token);
             $json = $result->getBody();
         } catch (ClientException $e) {
             $json = $e->getResponse()->getBody();
@@ -163,8 +143,8 @@ Route::get('/import-from-buffer', function(){
             $json = $e->getResponse()->getBody();
         }
         $posts = (isset(json_decode($json)->updates) ? json_decode($json)->updates : false);
-        if($posts){
-            $group_name = 'Buffer Import – '.ucwords(str_replace('google', 'google+', $socialaccount->type)).' – '.$socialaccount->name;
+        if ($posts) {
+            $group_name = 'Buffer Import – ' . ucwords(str_replace('google', 'google+', $socialaccount->type)) . ' – ' . $socialaccount->name;
             $group = new SocialPostGroups;
             $group->name = $group_name;
             $group->user_id = $user->id;
@@ -173,7 +153,7 @@ Route::get('/import-from-buffer', function(){
             $group->target_acounts = serialize(array($socialaccount->id));
             $group->save();
             foreach ($posts as $key => $bpost) {
-                if($key < 100){
+                if ($key < 100) {
                     $post = new SocialPosts;
                     $post->group_id = $group->id;
                     $post->text = $bpost->text;
@@ -186,21 +166,21 @@ Route::get('/import-from-buffer', function(){
     }
 });
 
-Route::post('/update-card-info', function(Request $request){
+Route::post('/update-card-info', function (Request $request) {
     $input = $request->input();
     dd($input);
 });
-Route::post('/close-account/', function(Request $request){
+Route::post('/close-account/', function (Request $request) {
 
 
     $input = $request->input();
-    if(isset($input['type'])){
+    if (isset($input['type'])) {
         $user = User::find($request->user_id);
         $id = $user->id;
         //\Cookie::queue('campaign_email', 'asdfghjk', 0);
         //dd(\Cookie::get('campaign_email'));
         \Cookie::queue(\Cookie::forget('campaign_email'));
-        \Cookie::queue('campaign_email', uniqid().'@bulk.ly', 7*24*60);
+        \Cookie::queue('campaign_email', uniqid() . '@bulk.ly', 7 * 24 * 60);
         \Illuminate\Support\Facades\Auth::guard('web')->logout();
 
         $subsModel = new \Bulkly\Subscriptions();
@@ -220,12 +200,11 @@ Route::post('/close-account/', function(Request $request){
 
 
         return redirect('login');
-    }
-    else {
+    } else {
         $user = User::find($request->user_id);
         $check = $user->subscription($request->user_plan)->cancelNow();
 
-        try{
+        try {
             $client = new Client;
             $result = $client->request('POST', 'https://api2.autopilothq.com/v1/contact', [
                 'headers' => [
@@ -234,7 +213,7 @@ Route::post('/close-account/', function(Request $request){
                 ],
                 'json' => [
                     'contact' => [
-                        'Email' =>$user->email,
+                        'Email' => $user->email,
                         'custom' => [
                             'string--Cancelled--Account' => 'true',
                             'string--Subscription--Status' => 'close',
@@ -243,8 +222,7 @@ Route::post('/close-account/', function(Request $request){
                     ]
                 ]
             ]);
-        }
-        catch (Exception $e) {
+        } catch (Exception $e) {
         }
 
         \Illuminate\Support\Facades\Auth::guard('web')->logout();
@@ -270,35 +248,33 @@ Route::get('/admin/membership-plan/delete/{id}', 'SuController@membershipPlanDel
 
 
 
-Route::get('/admin/free-sign-up','SuController@freeSignUp')->name('admin/free-sign-up');
-Route::get('/admin/free-sign-up/create','SuController@createFreeSignUp');
-Route::get('/admin/free-sign-up/delete/{id}','SuController@deleteFreeSignUp');
-Route::get('/admin/free-sign-up/renew/{id}','SuController@renewFreeAccount');
+Route::get('/admin/free-sign-up', 'SuController@freeSignUp')->name('admin/free-sign-up');
+Route::get('/admin/free-sign-up/create', 'SuController@createFreeSignUp');
+Route::get('/admin/free-sign-up/delete/{id}', 'SuController@deleteFreeSignUp');
+Route::get('/admin/free-sign-up/renew/{id}', 'SuController@renewFreeAccount');
 
 
-
-
-Route::post('/wait-date', function(Request $request){
+Route::post('/wait-date', function (Request $request) {
     $group = \Bulkly\SocialPostGroups::find($request->group_id);
     $group->repeat_wait = $request->repeat_wait;
     $group->save();
     $start_time = strtotime($group->start_time);
-    if( time() > $start_time ){
-        $group->next_schedule_time= date('Y-m-d H:i:s', time());
+    if (time() > $start_time) {
+        $group->next_schedule_time = date('Y-m-d H:i:s', time());
     } else {
-        $group->next_schedule_time= date('Y-m-d H:i:s', $start_time);
+        $group->next_schedule_time = date('Y-m-d H:i:s', $start_time);
     }
     $group->save();
 });
 
 Route::get('/test', 'SendPostController@index');
 Route::post('/post-sent-now/', 'AjaxController@sendPostNow');
-Route::post('/rebrandly_key', function(Request $request){
+Route::post('/rebrandly_key', function (Request $request) {
     $user = User::find(\Auth::id());
     $user->rebrandly_key = isset($request->rebrandly_key) ? $request->rebrandly_key : null;
     $user->save();
 });
-Route::get('/repare-all', function(){
+Route::get('/repare-all', function () {
     $activeGroups_Che = SocialPostGroups::all();
     foreach ($activeGroups_Che as $key => $group) {
         $interval = $group->interval;
@@ -323,17 +299,17 @@ Route::get('/repare-all', function(){
     }
 });
 
-Route::post('/update-temp-user', function(Request  $request){
-    if($request->email){
+Route::post('/update-temp-user', function (Request  $request) {
+    if ($request->email) {
         $user = User::where('email', $request->email)->first();
         //dd(\Cookie::get('campaign_email'), $user);
-        if($user !=null && ($user->email != \Cookie::get('campaign_email'))){
-            return json_encode(array('status'=>'ok', 'message'=>'Provided email address already register', 'reload'=> 'no'));
+        if ($user != null && ($user->email != \Cookie::get('campaign_email'))) {
+            return json_encode(array('status' => 'ok', 'message' => 'Provided email address already register', 'reload' => 'no'));
         } else {
             $user = User::find($request->user_id);
-            if($request->password){
-                if(strlen($request->password) < 6 ) {
-                    return json_encode(array('status'=>'ok', 'message'=>'Password characters lenght should at least 6', 'reload'=> 'no'));
+            if ($request->password) {
+                if (strlen($request->password) < 6) {
+                    return json_encode(array('status' => 'ok', 'message' => 'Password characters lenght should at least 6', 'reload' => 'no'));
                 } else {
                     $user_meta = array(
                         'temp_user' => false,
@@ -345,9 +321,9 @@ Route::post('/update-temp-user', function(Request  $request){
                     $user->save();
 
                     \Cookie::queue(\Cookie::forget('campaign_email'));
-                    \Cookie::queue('campaign_email', $user->email, 7*24*60);
+                    \Cookie::queue('campaign_email', $user->email, 7 * 24 * 60);
 
-                    try{
+                    try {
                         $client = new Client;
                         $result = $client->request('POST', 'https://api2.autopilothq.com/v1/contact', [
                             'headers' => [
@@ -357,8 +333,8 @@ Route::post('/update-temp-user', function(Request  $request){
                             'json' => [
                                 'contact' => [
                                     'FirstName' => $user->first_name,
-                                    'LastName' =>$user->last_name,
-                                    'Email' =>$user->email,
+                                    'LastName' => $user->last_name,
+                                    'Email' => $user->email,
                                     'custom' => [
                                         'string--Campaign' => 'Bulkly - Buffer Import Campaign',
                                     ],
@@ -367,42 +343,38 @@ Route::post('/update-temp-user', function(Request  $request){
                             ] //
                         ]);
                     } catch (RequestException $e) {
-
                     } catch (ClientException $e) {
-
                     }
 
 
-                    return json_encode(array('status'=>'ok', 'message'=>'User created', 'reload'=> 'yes' ));
+                    return json_encode(array('status' => 'ok', 'message' => 'User created', 'reload' => 'yes'));
                 }
-
             } else {
-                return json_encode(array('status'=>'ok', 'message'=>'Password required', 'reload'=> 'no'));
+                return json_encode(array('status' => 'ok', 'message' => 'Password required', 'reload' => 'no'));
             }
         }
-
     } else {
 
-        return json_encode(array('status'=>'ok', 'message'=>'Email required', 'reload'=> 'no'));
+        return json_encode(array('status' => 'ok', 'message' => 'Email required', 'reload' => 'no'));
     }
 });
 
-Route::get('/campaign', function(){
+Route::get('/campaign', function () {
     // get campaign Cookie
     $campaign_cookie = \Cookie::get('campaign');
     $campaign_email = \Cookie::get('campaign_email');
-    if(!$campaign_cookie && !$campaign_email){
+    if (!$campaign_cookie && !$campaign_email) {
         // set campaign Cookie
-        \Cookie::queue('campaign', 'true', 7*24*60);
-        \Cookie::queue('campaign_email', time().'@bulk.ly', 7*24*60);
+        \Cookie::queue('campaign', 'true', 7 * 24 * 60);
+        \Cookie::queue('campaign_email', time() . '@bulk.ly', 7 * 24 * 60);
     }
     $campaign_cookie = \Cookie::get('campaign');
     $campaign_email = \Cookie::get('campaign_email');
-    $redirect_ur = "https://bufferapp.com/oauth2/authorize?client_id=".env('BUFFER_CLIENT_ID')."&redirect_uri=".env('BUFFER_REDIRECT')."&response_type=code";
+    $redirect_ur = "https://bufferapp.com/oauth2/authorize?client_id=" . env('BUFFER_CLIENT_ID') . "&redirect_uri=" . env('BUFFER_REDIRECT') . "&response_type=code";
     return redirect(url($redirect_ur));
 });
 
-Route::get('/auth/logout', function(Request $request){
+Route::get('/auth/logout', function (Request $request) {
     Illuminate\Support\Facades\Auth::logout();
     return redirect(url('/login'));
 })->name('auth.logout');
@@ -410,14 +382,12 @@ Route::get('/auth/logout', function(Request $request){
 Route::post('/auth/login', 'Auth\LoginController@loginNow')->name('auth.login');
 
 
-Route::get('/rebrandly-test', function(){
+Route::get('/rebrandly-test', function () {
 
     $user = \Bulkly\User::find(\Auth::id());
 
 
-    try{
-
-
+    try {
 
         $client = new Client([
             'headers' => [
@@ -426,7 +396,8 @@ Route::get('/rebrandly-test', function(){
             ]
         ]);
 
-        $result = $client->post('https://api.rebrandly.com/v1/links',
+        $result = $client->post(
+            'https://api.rebrandly.com/v1/links',
             ['body' => json_encode(
                 [
                     'destination' => 'https://bitbucket.org/coredeveloper2013/overlog',
@@ -440,23 +411,19 @@ Route::get('/rebrandly-test', function(){
 
 
         dump(json_decode($result->getBody()));
-
-    } catch ( ClientException $e) {
+    } catch (ClientException $e) {
 
         dump($e->getResponse()->getBody()->getContents());
-
     } catch (RequestException $e) {
 
         dump($e->getResponse()->getBody()->getContents());
-
     }
-
-
-
 });
 
 Route::get('/sendPostTest', 'CronController@sendPostTest');
 
-Route::get('/app/bulk.ly/free/{code}','Auth\RegisterController@validUserRegistrationForm')->name('bulk.free-signup');
-Route::post('/app/bulk.ly/free/signUp/{code}','Auth\RegisterController@validUserRegistration');
+Route::get('/app/bulk.ly/free/{code}', 'Auth\RegisterController@validUserRegistrationForm')->name('bulk.free-signup');
+Route::post('/app/bulk.ly/free/signUp/{code}', 'Auth\RegisterController@validUserRegistration');
 
+Route::get('/history', 'HistoryController@index')->name('history.index');
+Route::get('/history/show', 'HistoryController@show')->name('history.show');

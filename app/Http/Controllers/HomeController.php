@@ -34,7 +34,6 @@ class HomeController extends Controller
             $this->middleware('confirmed');
             //$this->middleware('billing');
         }
-
     }
 
     /**
@@ -91,7 +90,6 @@ class HomeController extends Controller
             } else {
                 \Auth::login($campaign_user);
             }
-
         }
 
 
@@ -138,9 +136,9 @@ class HomeController extends Controller
             }*/
 
 
-//        if($user->id == 2874){
+            //        if($user->id == 2874){
             //dd(date_default_timezone_get());
-//        }
+            //        }
 
             if ($user->buffer_id == null || (isset($request->code) && $request->code != null)) {
                 if (isset($request->code)) {
@@ -191,7 +189,6 @@ class HomeController extends Controller
                                 } else {
                                     $avatar_https = 'https://app.bulk.ly/images/avatar.png';
                                 }
-
                             } catch (Exception $e) {
                                 $avatar_https = 'https://app.bulk.ly/images/avatar.png';
                             }
@@ -210,7 +207,6 @@ class HomeController extends Controller
                                 } else {
                                     $avatar_https = 'https://app.bulk.ly/images/avatar.png';
                                 }
-
                             } catch (Exception $e) {
                                 $avatar_https = 'https://app.bulk.ly/images/avatar.png';
                             }
@@ -225,7 +221,6 @@ class HomeController extends Controller
                             $social_account = SocialAccounts::whereNotIn('id', $delNotSocIds)->where('user_id', $user->id)->delete();
                         }
                     }
-
                 }
             }
         }
@@ -285,7 +280,6 @@ class HomeController extends Controller
                             } else {
                                 $avatar_https = 'https://app.bulk.ly/images/avatar.png';
                             }
-
                         } catch (Exception $e) {
                             $avatar_https = 'https://app.bulk.ly/images/avatar.png';
                         }
@@ -355,14 +349,12 @@ class HomeController extends Controller
                 $SocialPostGroupsNew = \Bulkly\SocialPostGroups::where('user_id', \Auth::id())->first();
                 if ($SocialPostGroupsNew) {
                     //dd(\Auth::user());
-//                    return redirect(route('content-pending', $SocialPostGroupsNew->id));
+                    //                    return redirect(route('content-pending', $SocialPostGroupsNew->id));
                     return redirect(route('start'));
                 } else {
                     dump('No Post Found');
                     return redirect(route('start'));
                 }
-
-
             }
         }
 
@@ -383,8 +375,6 @@ class HomeController extends Controller
         $activities = BufferPosting::where('user_id', Auth::id())->limit(5)->orderBy('sent_at', 'desc')->get();
         $services = \DB::table('buffer_postings')->select(\DB::raw('count(*) as count, account_service'))->groupBy('account_service')->where('user_id', Auth::id())->get();
         return view('home')->with('user', $user)->with('services', $services)->with('frequency', $frequency)->with('activities', $activities);
-
-
     }
 
     public function bufferChange(Request $request, $buffer_id)
@@ -461,7 +451,5 @@ class HomeController extends Controller
 
 
         return redirect(route('home'));
-
     }
-
 }
